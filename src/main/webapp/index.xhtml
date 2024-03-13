@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+<h:head title="3 лаба">
+    <h:outputScript library="JS" name="Clock.js"/>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet" type="text/css" href="resources/html/index.css"/>
+</h:head>
+<h:body>
+    <header>
+        <table id="header" style="font-size: large">
+            <tr>
+                <td class="variant">Вариант 2489</td>
+                <td class="labNumber">Лабораторная работа №2</td>
+                <td class="name">Онишков Валерий Вячеславович</td>
+            </tr>
+        </table>
+    </header>
+    <main>
+    <table id="table">
+        <tr>
+            <td>
+                <div id="clock">
+
+                    <div id="time">
+                        <a id="h">12</a> :
+                        <a id="m">00</a> :
+                        <a id="s">00</a>
+                    </div>
+
+                    <div id="date">
+                        <a id="d">1</a>
+                        <a id="mon">January</a>
+                        <a id="y">2045</a>
+                    </div>
+                </div>
+                <br/>
+                <h:link id="buttonWrapper" outcome="toMainPage">
+                    <h:commandButton value="Не хочу больше смотреть на время" id="goMainButton" class="buttons" action="toMainPage"/>
+                </h:link>
+            </td>
+        </tr>
+    </table>
+    </main>
+</h:body>
+</html>
+

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
+
+
+<h:head title="WEB3">
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet" type="text/css" href="resources/html/main.css"/>
+</h:head>
+<h:body>
+    <header>
+        <table id="header" style="font-size: large">
+            <tr>
+                <td class="variant">Вариант 2489</td>
+                <td class="labNumber">Лабораторная работа №2</td>
+                <td class="name">Онишков Валерий Вячеславович</td>
+            </tr>
+        </table>
+    </header>
+    <main>
+        <div class="container">
+            <h:form id="feedback">
+                <table id="mainTable">
+                    <tr>
+                        <th>
+                            Введите X:
+                        </th>
+                        <td>
+                            <h:selectOneRadio id="x" styleClass="r-buttons" value = "#{result.point.x}" required="true">
+
+                                <f:selectItem class="x-button" id="x-button1" itemValue = "-2" itemLabel ="-2"/>
+
+                                <f:selectItem class="x-button" id="x-button2" itemValue = "-1.5" itemLabel = "-1.5" />
+
+                                <f:selectItem class="x-button" id="x-button3" itemValue = "-1" itemLabel = "-1" />
+
+                                <f:selectItem class="x-button" id="x-button4" itemValue = "-0.5" itemLabel = "-0.5" />
+
+                                <f:selectItem class="x-button" id="x-button5" itemValue = "0" itemLabel = "0" />
+
+                                <f:selectItem class="x-button" id="x-button6" itemValue = "0.5" itemLabel = "0.5" />
+
+                                <f:selectItem class="x-button" id="x-button7" itemValue = "1" itemLabel = "1" />
+
+                                <f:selectItem class="x-button" id="x-button8" itemValue = "1.5" itemLabel = "1.5" />
+
+                                <f:selectItem class="x-button" id="x-button9" itemValue = "2" itemLabel = "2" />
+
+                            </h:selectOneRadio>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>
+                            Введите Y:
+                        </th>
+                        <td>
+                            <p:inputText name="y" type="text" value="#{result.point.y}" id="yInput" maxlength="15" placeholder="от -3 до 3" validatorMessage="от -3 до 3" required="false">
+                                <f:validateDoubleRange minimum="-3" maximum="3"/>
+                            </p:inputText>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>
+                            Введите R:
+                        </th>
+                        <td>
+                            <h:commandButton id="cmd1" value="1" type="button" class="r-button">
+                                <f:ajax onevent="drawGraph(1)" render="r" listener="#{result.point.setR(1)}"/>
+                            </h:commandButton>
+                            <h:commandButton id="cmd2" value="2" type="button" class="r-button">
+                                <f:ajax onevent="drawGraph(2)" render="r" listener="#{result.point.setR(2)}"/>
+                            </h:commandButton>
+                            <h:commandButton id="cmd3" value="3" type="button" class="r-button">
+                                <f:ajax onevent="drawGraph(3)" render="r" listener="#{result.point.setR(3)}"/>
+                            </h:commandButton>
+                            <h:commandButton id="cmd4" value="4" type="button" class="r-button">
+                                <f:ajax onevent="drawGraph(4)" render="r" listener="#{result.point.setR(4)}"/>
+                            </h:commandButton>
+                        </td>
+                    </tr>
+                </table>
+                <h:commandButton id="submitButton" class="buttons" type="submit" action="#{result.process()}" value="Отправить"/>
+                <br/>
+                <h:link id="buttonWrapper" outcome="toMainPage">
+                    <h:commandButton value="Опять хочу посмотреть на время" id="goMainButton" class="buttons" action="toStartPage"/>
+                </h:link>
+            </h:form>
+
+            <canvas id="canvas" class="canvas" width="400" height="400">This canvas does not support graphics</canvas>
+
+        </div>
+
+    </main>
+    <h:panelGroup>
+        <h:outputScript>
+            let arrayData =${result.sendData()}
+        </h:outputScript>
+    </h:panelGroup>
+    <p:remoteCommand name="asyncParam" action="#{result.getFromAsync}" process="@this"/>
+    <script src="resources/JS/main.js"/>
+    <script src="resources/JS/CanvasPrinter.js"/>
+</h:body>
+</html>
