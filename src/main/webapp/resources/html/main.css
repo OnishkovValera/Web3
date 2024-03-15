@@ -28,7 +28,7 @@
 
 }
 #mainTable{
-    border-spacing: 10px 30px;
+    border-spacing: 10px 20px;
     width:100%
 }
 .buttons{
@@ -39,6 +39,7 @@
     text-align: center;
     text-decoration: none;
     margin-top: 10px;
+    margin-left: 10px;
     display: inline-block;
     font-size: 16px;
     border-radius: 10px;
@@ -95,4 +96,38 @@ body{
 .r-button:hover{
     background-color: #04AA6D;
     color: white;
+}
+
+.result-table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.result-table thead tr {
+    background-color: #4CAF50;
+    color: #ffffff;
+    text-align: left;
+}
+
+.result-table th ,
+.result-table td {
+    padding: 12px 15px;
+}
+
+.result-table tbody tr{
+    border-bottom: 1px solid #dddddd;
+}
+
+.result-table tbody tr :nth-of-type(even) {
+    background-color: #f3f3f3;
+}
+
+.container{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }

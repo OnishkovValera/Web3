@@ -18,8 +18,9 @@ let height = canvas.height;
 let color = "rgba(20, 20, 20, 0.3)"
 context.font = "1.2rem mono";
 
-function drawGraph(r){
+let arrData
 
+function drawGraph(r){
 
     context.clearRect(0,0, 400, 400);
     drawArrow(-SIZE, SIZE / 2, SIZE, SIZE / 2);
@@ -64,7 +65,6 @@ function drawFigures(r){
     context.moveTo(0,0);
 
 }
-
 
 function setPointerAtDot(max_r = 4) {
     const totalPoints = 9.5;
@@ -128,20 +128,36 @@ function drawArrow(fromX, fromY, toX, toY){
     context.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6), toY - headLen * Math.sin(angle + Math.PI / 6));
     context.stroke();
 }
+
+function getPoints(){
+    arrData = [];
+    $('#result-table tr').each(function () {
+        let row = $(this);
+        arrData.push({
+            "x": parseFloat(row.find("td:eq(0)").text()),
+            "y": parseFloat(row.find("td:eq(1)").text()),
+            "r": parseFloat(row.find("td:eq(2)").text()),
+            "success": row.find("td:eq(3)").text() == "true",
+        })
+    });
+    arrData.shift();
+}
+
+
 function drawPoints(){
-    let arrData = arrayData;
-    console.log(arrData.length)
-    for(let i = 0; i < arrData.length; i++){
+
+
+    for(let i = 1; i < arrData.length; i++){
         let dot = arrData[i];
         let st;
-        if( dot[3] === false){
+        if( dot.success === false){
             st = false;
-        }else if(dot[3] === true){
+        }else if(dot.success === true){
             st = true;
         }else{
             st = undefined;
         }
-        drawPoint(dot[0], dot[1], dot[2], st);
+        drawPoint(dot.x, dot.y, dot.r, st);
     }
 
 }
@@ -162,5 +178,11 @@ function parseCanvasClick(event){
             {name:"y", value: y.toString()},
             {name:"r", value: lastClickedRadius.toString()}
         ])
+        if(isDataValid(x, y, Number(lastClickedRadius))){
+            console.log(isHit(x,y,lastClickedRadius))
+            arrData.push({"x":x, "y":y, "r":lastClickedRadius, "success":isHit(x, y, lastClickedRadius)});
+        }
+        drawGraph(lastClickedRadius);
     }
 }
+

@@ -32,7 +32,7 @@
                         <td>
                             <h:selectOneRadio id="x" styleClass="r-buttons" value = "#{result.point.x}" required="true">
 
-                                <f:selectItem class="x-button" id="x-button1" itemValue = "-2" itemLabel ="-2"/>
+                                <f:selectItem class="x-button"  id="x-button1" itemValue = "-2" itemLabel ="-2"/>
 
                                 <f:selectItem class="x-button" id="x-button2" itemValue = "-1.5" itemLabel = "-1.5" />
 
@@ -84,24 +84,58 @@
                         </td>
                     </tr>
                 </table>
-                <h:commandButton id="submitButton" class="buttons" type="submit" action="#{result.process()}" value="Отправить"/>
-                <br/>
-                <h:link id="buttonWrapper" outcome="toMainPage">
-                    <h:commandButton value="Опять хочу посмотреть на время" id="goMainButton" class="buttons" action="toStartPage"/>
-                </h:link>
+                <div id="main-button">
+                    <h:commandButton id="check-button" value="Отправить" styleClass="buttons" >
+                        <f:ajax execute="@form" listener="#{result.process()}" render="result-table"/>
+                    </h:commandButton>
+
+                    <h:commandButton id="clear-button" value="Очистить" styleClass="buttons" immediate="true">
+                        <f:ajax execute="@form" listener="#{result.clear()}" render="result-table"/>
+                    </h:commandButton>
+
+                </div>
             </h:form>
 
             <canvas id="canvas" class="canvas" width="400" height="400">This canvas does not support graphics</canvas>
 
-        </div>
 
+        </div>
+        <h:link id="buttonWrapper" outcome="toStartPage">
+            <h:commandButton value="Хочу еще посмотреть на время" id="goStartButton" class="buttons" action="toStartPage"/>
+        </h:link>
+        <div id="tbl">
+            <h:dataTable id="result-table" styleClass="result-table" value="#{result.points}" var="item">
+                <p:remoteCommand name=""/>
+                <h:column>
+                    <f:facet name="header">X</f:facet>
+                    <h:outputText id="result-x" value="#{item.x}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Y</f:facet>
+                    <h:outputText id="y" value="#{item.y}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">R</f:facet>
+                    <h:outputText id="r" value="#{item.r}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Hit fact</f:facet>
+                    <h:outputText id="success" value="#{item.hit}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Current time</f:facet>
+                    <h:outputText id="curTime" value="#{item.currentTime}"/>
+                </h:column>
+                <h:column>
+                    <f:facet name="header">Execution time</f:facet>
+                    <h:outputText id="execTime" value="#{item.executionTime}"/>
+                </h:column>
+            </h:dataTable>
+        </div>
     </main>
-    <h:panelGroup>
-        <h:outputScript>
-            let arrayData =${result.sendData()}
-        </h:outputScript>
-    </h:panelGroup>
-    <p:remoteCommand name="asyncParam" action="#{result.getFromAsync}" process="@this"/>
+
+
+    <p:remoteCommand name="asyncParam" action="#{result.fromAsync()}" update="result-table" process="@this"/>
     <script src="resources/JS/main.js"/>
     <script src="resources/JS/CanvasPrinter.js"/>
 </h:body>

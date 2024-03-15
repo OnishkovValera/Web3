@@ -49,6 +49,9 @@ public class Result implements Serializable {
         points = loadPointsFromDB(sessionId);
     }
 
+    public void clear(){
+        points.clear();
+    }
     public ArrayList<Point> sendData(){
         return points;
     }
@@ -100,6 +103,8 @@ public class Result implements Serializable {
             newPoint.setCurrentTime(currentTime);
             points.add(newPoint);
             addPoint(newPoint);
+            point.setX(null);
+            point.setY(null);
             for(Point point: points){
                 System.out.println(point);
             }
@@ -110,7 +115,7 @@ public class Result implements Serializable {
 
     }
 
-    public Boolean getFromAsync(){
+    public Boolean fromAsync(){
         final Map<String, String> params = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap();
         point.setX(Double.parseDouble(params.get("x")));
         point.setY(Double.parseDouble(params.get("y")));
