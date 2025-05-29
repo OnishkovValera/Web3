@@ -75,10 +75,37 @@
       <artifactId>hibernate-core</artifactId>
       <version>6.3.1.Final</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.7.1</version> <!-- можно выбрать актуальную версию -->
+        <executions>
+          <execution>
+            <!-- Привязываем задачу к фазе package -->
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <!-- куда складывать -->
+              <outputDirectory>${project.basedir}/lib</outputDirectory>
+              <!-- какие типы артефактов копировать (по умолчанию jar) -->
+              <!-- перезаписывать ли существующие -->
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>

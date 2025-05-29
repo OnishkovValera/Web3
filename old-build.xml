@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Web3_1" default="build" basedir=".">
+
+    <!-- Load properties file -->
+    <property file="snippet.properties"/>
+
+    <!-- Define classpath -->
+    <path id="compile.classpath">
+        <fileset dir="${lib.dir}" includes="*.jar" erroronmissingdir="false"/>
+    </path>
+
+    <path id="test.classpath">
+        <path refid="compile.classpath"/>
+        <pathelement location="${classes.dir}"/>
+        <pathelement location="${test.classes.dir}"/>
+    </path>
+
+    <!-- Initialize directories -->
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${test.classes.dir}"/>
+        <mkdir dir="${test.reports.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+        <mkdir dir="${locale.build.dir}"/>
+        <mkdir dir="${git.temp.dir}"/>
+
+        <!-- Get current timestamp -->
+        <tstamp>
+            <format property="build.timestamp" pattern="yyyy-MM-dd HH:mm:ss"/>
+        </tstamp>
+
+        <!-- Create MANIFEST.MF -->
+        <manifest file="${manifest.file}">
+            <attribute name="Manifest-Version" value="1.0"/>
+            <attribute name="Main-Class" value="${project.main.class}"/>
+            <attribute name="Implementation-Title" value="${project.name}"/>
+            <attribute name="Implementation-Version" value="${project.version}"/>
+            <attribute name="Implementation-Vendor" value="Онишков Валерий Вячеславович"/>
+            <attribute name="Built-By" value="${user.name}"/>
+            <attribute name="Built-Date" value="${build.timestamp}"/>
+            <attribute name="Class-Path" value=". lib/"/>
+        </manifest>
+    </target>
+
+    <!-- Clean target -->
+    <target name="clean" description="Clean all compiled classes and temporary files">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+        <echo message="Cleaned all compiled classes and temporary files"/>
+    </target>
+
+    <!-- Compile source code with error handling -->
+    <target name="compile" depends="init" description="Compile source code">
+        <echo message="Compiling source code..."/>
+
+        <!-- Try compilation and set property on failure -->
+        <javac srcdir="${src.dir}"
+               destdir="${classes.dir}"
+               classpathref="compile.classpath"
+               source="${java.source.version}"
+               target="${java.target.version}"
+               encoding="${javac.encoding}"
+               debug="${javac.debug}"
+               includeantruntime="false"
+               failonerror="false"
+               errorproperty="compile.error">
+            <compilerarg value="-Xlint:unchecked"/>
+            <compilerarg value="-Xlint:deprecation"/>
+        </javac>
+
+        <!-- Check if compilation failed -->
+        <condition property="compile.failed">
+            <isset property="compile.error"/>
+        </condition>
+
+        <!-- Copy resources if compilation succeeded -->
+        <antcall target="copy-resources"/>
+
+        <!-- Handle compilation failure -->
+        <fail if="compile.failed" message="Compilation failed. Run 'ant history' to restore from git."/>
+
+        <echo message="Source code compiled successfully"/>
+    </target>
+
+    <!-- Copy resources (only if compilation succeeded) -->
+    <target name="copy-resources" unless="compile.failed">
+        <copy todir="${classes.dir}" failonerror="false">
+            <fileset dir="${resources.dir}" includes="**/*" erroronmissingdir="false"/>
+        </copy>
+    </target>
+
+    <!-- Compile test code -->
+    <target name="compile-tests" depends="compile" description="Compile test code">
+        <echo message="Compiling test code..."/>
+        <javac srcdir="${test.src.dir}"
+               destdir="${test.classes.dir}"
+               classpathref="test.classpath"
+               source="${java.source.version}"
+               target="${java.target.version}"
+               encoding="${javac.encoding}"
+               debug="${javac.debug}"
+               includeantruntime="false">
+            <compilerarg value="-Xlint:unchecked"/>
+        </javac>
+        <echo message="Test code compiled successfully"/>
+    </target>
+
+    <!-- Build JAR -->
+    <target name="build" depends="compile" description="Build JAR file">
+        <echo message="Creating JAR file..."/>
+        <jar destfile="${dist.dir}/${jar.name}"
+             manifest="${manifest.file}">
+            <fileset dir="${classes.dir}"/>
+            <fileset dir="${locale.build.dir}" erroronmissingdir="false"/>
+        </jar>
+        <echo message="JAR file created: ${dist.dir}/${jar.name}"/>
+    </target>
+
+    <!-- Run tests -->
+    <target name="test" depends="build,compile-tests" description="Run JUnit tests">
+        <echo message="Running JUnit tests..."/>
+
+        <!-- Define JUnit task -->
+        <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask">
+            <classpath refid="test.classpath"/>
+        </taskdef>
+
+        <!-- Run tests -->
+        <junit printsummary="yes" haltonfailure="no" haltonerror="no" fork="yes">
+            <classpath refid="test.classpath"/>
+
+            <formatter type="plain" usefile="true"/>
+            <formatter type="xml" usefile="true"/>
+
+            <batchtest todir="${test.reports.dir}">
+                <fileset dir="${test.src.dir}">
+                    <include name="**/*Test.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+
+        <!-- Generate test report -->
+        <junitreport todir="${test.reports.dir}">
+            <fileset dir="${test.reports.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${test.reports.dir}/html"/>
+        </junitreport>
+
+        <echo message="Test reports generated in ${test.reports.dir}"/>
+    </target>
+
+    <!-- Native2ASCII conversion -->
+    <target name="native2ascii" depends="init" description="Convert localization files using native2ascii">
+        <echo message="Converting localization files..."/>
+
+        <!-- Check if locale source directory exists -->
+        <available file="${locale.src.dir}" type="dir" property="locale.exists"/>
+
+        <!-- Convert properties files if source exists -->
+        <antcall target="do-native2ascii"/>
+
+        <echo message="Localization files conversion completed"/>
+    </target>
+
+    <!-- Actual native2ascii conversion -->
+    <target name="do-native2ascii" if="locale.exists">
+        <native2ascii src="${locale.src.dir}"
+                      dest="${locale.build.dir}"
+                      includes="**/*.properties"
+                      encoding="UTF-8"/>
+    </target>
+
+    <!-- History target - restore from git if compilation fails -->
+    <target name="history" description="Restore working version from git history">
+        <echo message="Starting git history restoration process..."/>
+
+        <!-- Check if git repository exists -->
+        <available file=".git" type="dir" property="git.available"/>
+        <fail unless="git.available" message="Git repository not found"/>
+
+        <!-- Get list of commits and save to file -->
+        <exec executable="git" output="${git.commits.file}" failonerror="false">
+            <arg value="rev-list"/>
+            <arg value="--reverse"/>
+            <arg value="HEAD"/>
+        </exec>
+
+        <!-- Start the restoration process -->
+        <antcall target="try-restore-commits"/>
+    </target>
+
+    <!-- Try to restore from commits -->
+    <target name="try-restore-commits">
+        <echo message="Attempting to restore from git history..."/>
+
+        <!-- Load commits file into property -->
+        <loadfile property="all.commits" srcFile="${git.commits.file}"/>
+
+        <!-- Try restoring from recent commits -->
+        <antcall target="restore-commit-1"/>
+    </target>
+
+    <!-- Try to restore from most recent commits (simplified approach) -->
+    <target name="restore-commit-1">
+        <echo message="Trying to restore from previous commit..."/>
+
+        <!-- Get the previous commit hash -->
+        <exec executable="git" outputproperty="prev.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD~1"/>
+        </exec>
+
+        <!-- Reset to previous commit -->
+        <exec executable="git" failonerror="false" resultproperty="reset.result">
+            <arg value="reset"/>
+            <arg value="--hard"/>
+            <arg value="${prev.commit}"/>
+        </exec>
+
+        <!-- Try compilation -->
+        <antcall target="test-compile"/>
+
+        <!-- If compilation failed, try older commit -->
+        <antcall target="restore-commit-2"/>
+    </target>
+
+    <!-- Try second previous commit -->
+    <target name="restore-commit-2" if="test.compile.failed">
+        <echo message="Trying to restore from second previous commit..."/>
+
+        <!-- Get the second previous commit hash -->
+        <exec executable="git" outputproperty="prev2.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD~2"/>
+        </exec>
+
+        <!-- Reset to second previous commit -->
+        <exec executable="git" failonerror="false">
+            <arg value="reset"/>
+            <arg value="--hard"/>
+            <arg value="${prev2.commit}"/>
+        </exec>
+
+        <!-- Try compilation -->
+        <antcall target="test-compile"/>
+
+        <!-- If compilation failed, try third commit -->
+        <antcall target="restore-commit-3"/>
+    </target>
+
+    <!-- Try third previous commit -->
+    <target name="restore-commit-3" if="test.compile.failed">
+        <echo message="Trying to restore from third previous commit..."/>
+
+        <!-- Get the third previous commit hash -->
+        <exec executable="git" outputproperty="prev3.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD~3"/>
+        </exec>
+
+        <!-- Reset to third previous commit -->
+        <exec executable="git" failonerror="false">
+            <arg value="reset"/>
+            <arg value="--hard"/>
+            <arg value="${prev3.commit}"/>
+        </exec>
+
+        <!-- Try compilation -->
+        <antcall target="test-compile"/>
+
+        <!-- Generate diff if we found working version -->
+        <antcall target="generate-diff"/>
+    </target>
+
+    <!-- Test compilation without failing the build -->
+    <target name="test-compile">
+        <echo message="Testing compilation..."/>
+
+        <!-- Try to compile -->
+        <javac srcdir="${src.dir}"
+               destdir="${git.temp.dir}"
+               classpathref="compile.classpath"
+               source="${java.source.version}"
+               target="${java.target.version}"
+               encoding="${javac.encoding}"
+               debug="${javac.debug}"
+               includeantruntime="false"
+               failonerror="false"
+               errorproperty="test.compile.error">
+        </javac>
+
+        <!-- Set property if compilation failed -->
+        <condition property="test.compile.failed">
+            <isset property="test.compile.error"/>
+        </condition>
+
+        <!-- Report result -->
+        <antcall target="compile-success"/>
+        <antcall target="compile-failure"/>
+    </target>
+
+    <!-- Report successful compilation -->
+    <target name="compile-success" unless="test.compile.failed">
+        <echo message="Compilation successful! Working version found."/>
+
+        <!-- Get current commit for diff -->
+        <exec executable="git" outputproperty="current.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD"/>
+        </exec>
+
+        <property name="working.commit" value="${current.commit}"/>
+    </target>
+
+    <!-- Report failed compilation -->
+    <target name="compile-failure" if="test.compile.failed">
+        <echo message="Compilation failed for this commit."/>
+    </target>
+
+    <!-- Generate diff report -->
+    <target name="generate-diff" unless="test.compile.failed">
+        <echo message="Generating diff report..."/>
+
+        <!-- Get next commit for diff -->
+        <exec executable="git" outputproperty="next.commit" failonerror="false">
+            <arg value="rev-parse"/>
+            <arg value="HEAD~1"/>
+        </exec>
+
+        <!-- Generate diff -->
+        <exec executable="git" output="${git.diff.file}" failonerror="false">
+            <arg value="diff"/>
+            <arg value="${working.commit}"/>
+            <arg value="${next.commit}"/>
+        </exec>
+
+        <echo message="Diff report generated: ${git.diff.file}"/>
+    </target>
+
+    <!-- Force compilation attempt (for history target) -->
+    <target name="force-compile" description="Force compilation attempt for history restoration">
+        <javac srcdir="${src.dir}"
+               destdir="${classes.dir}"
+               classpathref="compile.classpath"
+               source="${java.source.version}"
+               target="${java.target.version}"
+               encoding="${javac.encoding}"
+               debug="${javac.debug}"
+               includeantruntime="false"
+               failonerror="false"
+               errorproperty="force.compile.error">
+        </javac>
+
+        <!-- If compilation still fails after history restoration -->
+        <fail if="force.compile.error" message="Unable to restore working version from git history"/>
+
+        <echo message="Successfully restored working version from git history"/>
+    </target>
+
+    <!-- Combined build with all features -->
+    <target name="full-build" depends="clean,native2ascii,compile,test,build"
+            description="Complete build with all features">
+        <echo message="Full build completed successfully!"/>
+        <echo message="JAR location: ${dist.dir}/${jar.name}"/>
+        <echo message="Test reports: ${test.reports.dir}/html/index.html"/>
+    </target>
+
+    <!-- Help target -->
+    <target name="help" description="Display available targets">
+        <echo message="Available targets:"/>
+        <echo message="  compile      - Compile source code"/>
+        <echo message="  build        - Compile and create JAR"/>
+        <echo message="  clean        - Remove compiled files"/>
+        <echo message="  test         - Run JUnit tests"/>
+        <echo message="  native2ascii - Convert localization files"/>
+        <echo message="  history      - Restore from git if compilation fails"/>
+        <echo message="  full-build   - Complete build with all features"/>
+        <echo message="  help         - Display this help"/>
+    </target>
+
+</project>
