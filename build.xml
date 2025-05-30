@@ -3,7 +3,7 @@
 
     <!-- Include variables and constants -->
     <property file="build.properties"/>
-
+    <property name="src.encoding" value="UTF-8"/>
     <!-- Define the classpath for the project -->
     <path id="project.classpath">
         <fileset dir="${lib.dir}">
@@ -24,8 +24,8 @@
     </target>
 
     <!-- [default] Compile project -->
-    <target name="compile" depends="init">
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false" classpath="project.classpath">
+    <target name="compile" depends="init, native2ascii">
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" includeantruntime="false" classpath="project.classpath" encoding="UTF-8">
             <classpath refid="project.classpath"/>
             <compilerarg line="-Xlint:unchecked"/>
         </javac>
@@ -134,17 +134,12 @@
     </target>
 
     <!-- Convert native2ascii for localization files -->
-
-    <target name="native2ascii" if="locale.exists">
-        <native2ascii src="${locale.src.dir}"
-                      dest="${locale.build.dir}"
-                      includes="**/*.properties"
-                      encoding="UTF-8"/>
-
-        <!-- Copy converted files to classes directory -->
-        <copy todir="${classes.dir}" failonerror="false">
-            <fileset dir="${locale.build.dir}" includes="**/*.properties"/>
-        </copy>
+    <target name="native2ascii">
+        <native2ascii
+                src="${locale.src.dir}"
+                dest="${locale.build.dir}"
+                encoding="UTF-8"
+                includes="**/*.properties"/>
     </target>
 
 
@@ -163,7 +158,6 @@
                 <pathelement location="${lib.dir}/ant-contrib.jar"/>
             </classpath>
         </taskdef>
-
         <foreach list="${previous.revision}" param="revision" target="find-working-revision">
             <param name="revision" value="${previous.revision}"/>
         </foreach>
