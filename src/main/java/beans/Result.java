@@ -1,5 +1,7 @@
 package beans;
 
+import beans.mbeans.MXBeanImpl.PointsDistance;
+import beans.mbeans.MXBeanImpl.PointsStatistics;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
@@ -13,7 +15,10 @@ import org.hibernate.query.Query;
 import utils.AreaValidator;
 import utils.DataValidator;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -36,7 +41,8 @@ public class Result implements Serializable {
     private ArrayList<Point> points = new ArrayList<>();
     @Inject
     DataValidator dataValidator;
-
+    private PointsStatistics pointsStatistics;
+    private PointsDistance pointsDistance;
     private String sessionId;
     private Configuration configuration = new Configuration().configure();
     private SessionFactory sessionFactory = configuration.buildSessionFactory();
@@ -47,6 +53,23 @@ public class Result implements Serializable {
         HttpSession session = (HttpSession) fCtx.getExternalContext().getSession(true);
         this.sessionId = session.getId();
         points = loadPointsFromDB(sessionId);
+
+        try {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+
+            // Регистрация MBean для статистики точек
+            pointsStatistics = new PointsStatistics();
+            ObjectName statsName = new ObjectName("beans:type=PointsStatistics");
+            mbs.registerMBean(pointsStatistics, statsName);
+
+            // Регистрация MBean для расстояний между точками
+            pointsDistance = new PointsDistance();
+            ObjectName distanceName = new ObjectName("beans:type=PointsDistance");
+            mbs.registerMBean(pointsDistance, distanceName);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void clear(){
@@ -94,7 +117,10 @@ public class Result implements Serializable {
         }
         if(dataValidator.isDataCorrect(point.getX(), point.getY(), point.getR())){
             Point newPoint = new Point(point.getX(), point.getY(), point.getR());
-            newPoint.setHit(AreaValidator.isHit(point.getX(), point.getY(), point.getR()));
+            boolean isHit = AreaValidator.isHit(point.getX(), point.getY(), point.getR());
+            newPoint.setHit(isHit);
+            pointsStatistics.addPoint(isHit);
+            pointsDistance.addPoint(newPoint);
             newPoint.setSessionId(sessionId);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
             String currentTime = formatter.format(LocalDateTime.now(ZoneOffset.UTC));
